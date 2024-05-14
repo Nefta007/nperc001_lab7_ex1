@@ -152,6 +152,9 @@ int TickFtn_left(int state){
     switch (state)
     {
     case idle_left:
+        PORTB = SetBit(PORTB,0,0);
+        PORTD = SetBit(PORTD,7,0);
+        PORTD = SetBit(PORTD,5,0);
     break;
 
     case Left_One:
