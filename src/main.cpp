@@ -7,6 +7,7 @@
 
 #define NUM_TASKS 1 //TODO: Change to the number of tasks being used
 unsigned char i;
+unsigned char j;
 
 //Task struct for concurrent synchSMs implmentations
 typedef struct _task{
@@ -20,7 +21,8 @@ typedef struct _task{
 //TODO: Define Periods for each task
 // e.g. const unsined long TASK1_PERIOD = <PERIOD>
 const unsigned long Left_Period = 1000;
-const unsigned long GCD_PERIOD = Left_Period;//TODO:Set the GCD Period
+// const unsigned long Right_Period = 1000;
+const unsigned long GCD_PERIOD = Left_Period;//findGCD(Right_Period, Left_Period);//TODO:Set the GCD Period
 
 task tasks[NUM_TASKS]; // declared task array with 5 tasks
 
@@ -39,9 +41,11 @@ void TimerISR() {
 int stages[8] = {0b0001, 0b0011, 0b0010, 0b0110, 0b0100, 0b1100, 0b1000, 0b1001};//Stepper motor phases
 
 //TODO: Create your tick functions for each task
-enum left_state{idel_left, Left_One, Left_Two, Left_Three};
+enum left_state{idle_left, Left_One, Left_Two, Left_Three};
 int TickFtn_left(int state);
 
+// enum right_state{idle_right, Right_One, Right_Two, Right_Three};
+// int TickFtn_right(int state);
 
 int main(void) {
     //TODO: initialize all your inputs and ouputs
@@ -66,10 +70,16 @@ int main(void) {
     // tasks[0].elapsedTime = ;
     // tasks[0].TickFct = ;
     unsigned char i  = 0;
-    tasks[i].state = idel_left;
+    tasks[i].state = idle_left;
     tasks[i].period = Left_Period;
     tasks[i].elapsedTime = tasks[i].period;
     tasks[i].TickFct = &TickFtn_left;
+    i++;
+
+    // tasks[i].state = idle_right;
+    // tasks[i].period = Right_Period;
+    // tasks[i].elapsedTime = tasks[i].period;
+    // tasks[i].TickFct = &TickFtn_right;
 
     TimerSet(GCD_PERIOD);
     TimerOn();
@@ -83,7 +93,7 @@ int main(void) {
 int TickFtn_left(int state){
     switch (state)
     {
-    case idel_left:
+    case idle_left:
     // does not require the ! mark when pressed check code to see for bugs
         if(((PINC >> 3) & 0x01)){
             i = 0;
@@ -91,7 +101,7 @@ int TickFtn_left(int state){
         }
         else{
             i = 0;
-            state = idel_left;
+            state = idle_left;
         }
     break;
 
@@ -99,13 +109,13 @@ int TickFtn_left(int state){
         if(i < 1){
         state = Left_One;
         }
-        else if(i >= 1 && !((PINC >> 3) & 0x01)){
+        else if(i >= 1 && ((PINC >> 3) & 0x01)){
             i = 0;
             state = Left_Two;
         }
-        else if((PINC >> 3) & 0x01){
+        else if(!((PINC >> 3) & 0x01)){
             i = 0;
-            state = idel_left;
+            state = idle_left;
         }
     break;
     
@@ -113,13 +123,13 @@ int TickFtn_left(int state){
         if(i < 1){
             state = Left_Two;
         }
-        if(i >= 1 && !((PINC >> 3) & 0x01)){
+        if(i >= 1 && ((PINC >> 3) & 0x01)){
             i = 0;
             state = Left_Three;
         }
-        else if((PINC >> 3) & 0x01){
+        else if(!((PINC >> 3) & 0x01)){
             i = 0;
-            state = idel_left;
+            state = idle_left;
         }
     break;
 
@@ -127,11 +137,11 @@ int TickFtn_left(int state){
         if(i < 2){
             state = Left_Three;
         }
-        else if(i >= 2 && !((PINC >> 3) & 0x01)){
+        else if(i >= 2 && ((PINC >> 3) & 0x01)){
             state = Left_One;
         }
-        else if((PINC >> 3) & 0x01){
-            state = idel_left;
+        else if(!((PINC >> 3) & 0x01)){
+            state = idle_left;
         }
     break;
 
@@ -141,7 +151,7 @@ int TickFtn_left(int state){
 
     switch (state)
     {
-    case idel_left:
+    case idle_left:
     break;
 
     case Left_One:
@@ -167,6 +177,7 @@ int TickFtn_left(int state){
             PORTB = SetBit(PORTB,0,0);
             PORTD = SetBit(PORTD,7,0);
             PORTD = SetBit(PORTD,5,0);
+            i++;
         }
     break;
 
@@ -175,3 +186,103 @@ int TickFtn_left(int state){
     }
     return state;
 }
+
+// // enum left_state{idle_right, Right_One, Right_Two, Right_Three};
+// int TickFtn_right(int state){
+//         switch (state)
+//     {
+//     case idle_right:
+//     // does not require the ! mark when pressed check code to see for bugs
+//         if(((PINC >> 4) & 0x01)){
+//             i = 0;
+//             state = Right_One;
+//         }
+//         else{
+//             i = 0;
+//             state = idle_left;
+//         }
+//     break;
+
+//     case Right_One:
+//         if(i < 1){
+//         state = Right_One;
+//         }
+//         else if(i >= 1 && ((PINC >> 4) & 0x01)){
+//             i = 0;
+//             state = Right_Two;
+//         }
+//         else if(!((PINC >> 4) & 0x01)){
+//             i = 0;
+//             state = idle_right;
+//         }
+//     break;
+    
+//     case Right_Two:
+//         if(i < 1){
+//             state = Right_Two;
+//         }
+//         if(i >= 1 && ((PINC >> 4) & 0x01)){
+//             i = 0;
+//             state = Right_Three;
+//         }
+//         else if(!((PINC >> 4) & 0x01)){
+//             i = 0;
+//             state = idle_right;
+//         }
+//     break;
+
+//     case Right_Three:
+//         if(i < 2){
+//             state = Right_Three;
+//         }
+//         else if(i >= 2 && ((PINC >> 4) & 0x01)){
+//             state = Right_One;
+//         }
+//         else if(!((PINC >> 4) & 0x01)){
+//             state = idle_right;
+//         }
+//     break;
+
+//     default:
+//         break;
+//     }
+
+//     switch (state)
+//     {
+//     case idle_right:
+//     i = 0;
+
+//     break;
+
+//     case Right_One:
+//         PORTD = SetBit(PORTD,4,1);
+//         if(i < 1){
+//             i++;
+//         }
+//     break;
+    
+//     case Right_Two:
+//         PORTD = SetBit(PORTD,3,1);
+//         if(i < 1){
+//             i++;
+//         }
+//     break;
+
+//     case Right_Three:
+//         PORTD = SetBit(PORTD,2,1);
+//         if(i < 1){
+//             i++;
+//         }
+//         else if(i >= 1){
+//             PORTD = SetBit(PORTD,4,0);
+//             PORTD = SetBit(PORTD,3,0);
+//             PORTD = SetBit(PORTD,2,0);
+//             i++;
+//         }
+//     break;
+
+//     default:
+//         break;
+//     }
+//     return state;
+// }
