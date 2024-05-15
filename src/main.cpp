@@ -5,7 +5,7 @@
 #include "serialATmega.h"
 
 
-#define NUM_TASKS 2 //TODO: Change to the number of tasks being used
+#define NUM_TASKS 3 //TODO: Change to the number of tasks being used
 unsigned char i;
 unsigned char j;
 
@@ -22,6 +22,7 @@ typedef struct _task{
 // e.g. const unsined long TASK1_PERIOD = <PERIOD>
 const unsigned long Left_Period = 1000;
 const unsigned long Right_Period = 1000;
+const unsigned long Horn_Period = 1000;
 const unsigned long GCD_PERIOD = findGCD(Right_Period, Left_Period);//TODO:Set the GCD Period
 
 task tasks[NUM_TASKS]; // declared task array with 5 tasks
@@ -47,6 +48,9 @@ int TickFtn_left(int state);
 enum right_state{idle_right, Right_One, Right_Two, Right_Three};
 int TickFtn_right(int state);
 
+enum horn_period{horn_off, horn_on};
+int TickFtn_horn(int state);
+
 int main(void) {
     //TODO: initialize all your inputs and ouputs
 
@@ -59,6 +63,7 @@ int main(void) {
     serial_init(9600);
 
     //TODO: Initialize the buzzer timer/pwm(timer0)
+    OCR0A = 128; //sets duty cycle to 50% since TOP is always 256
 
     //TODO: Initialize the servo timer/pwm(timer1)
 
@@ -69,6 +74,7 @@ int main(void) {
     // tasks[0].state = ;
     // tasks[0].elapsedTime = ;
     // tasks[0].TickFct = ;
+    // task 1
     unsigned char i  = 0;
     tasks[i].state = idle_left;
     tasks[i].period = Left_Period;
@@ -76,10 +82,18 @@ int main(void) {
     tasks[i].TickFct = &TickFtn_left;
     i++;
 
+    // task 2
     tasks[i].state = idle_right;
     tasks[i].period = Right_Period;
     tasks[i].elapsedTime = tasks[i].period;
     tasks[i].TickFct = &TickFtn_right;
+    i++;
+
+    //task 3
+    tasks[i].state = horn_off;
+    tasks[i].period = Horn_Period;
+    tasks[i].elapsedTime = tasks[i].period;
+    tasks[i].TickFct = &TickFtn_horn;
 
     TimerSet(GCD_PERIOD);
     TimerOn();
@@ -285,6 +299,49 @@ int TickFtn_right(int state){
         }
     break;
 
+    default:
+        break;
+    }
+    return state;
+}
+
+// enum horn_period{horn_off, horn_on};
+int TickFtn_horn(int state){
+    switch (state)
+    {
+    case horn_off:
+        if(!((PINC >> 2)&0x01)){
+            state = horn_on;
+        }
+        else{
+            state = horn_off;
+        }
+        break;
+    
+    case horn_on:
+        if(!((PINC >> 2)&0x01)){
+            state = horn_on;
+        }
+        else if((PINC >> 2)&0x01){
+            state = horn_off;
+        }
+    default:
+        break;
+    }
+
+    switch (state)
+    {
+    case horn_off:
+        TCCR0A |= (1 << COM0A1);// use Channel A
+        TCCR0A |= (1 << WGM01) | (1 << WGM00);// set fast PWM Mode
+        TCCR0B = (TCCR0B & 0xF8) | 0x00; //set prescaler to 8
+        break;
+    
+    case horn_on:
+        TCCR0A |= (1 << COM0A1);// use Channel A
+        TCCR0A |= (1 << WGM01) | (1 << WGM00);// set fast PWM Mode
+        TCCR0B = (TCCR0B & 0xF8) | 0x04; //set prescaler to 8
+        break;
     default:
         break;
     }
