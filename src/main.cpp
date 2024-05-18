@@ -8,6 +8,7 @@
 #define NUM_TASKS 3 //TODO: Change to the number of tasks being used
 unsigned char i;
 unsigned char j;
+unsigned char on;
 
 //Task struct for concurrent synchSMs implmentations
 typedef struct _task{
@@ -109,8 +110,9 @@ int TickFtn_left(int state){
     {
     case idle_left:
     // does not require the ! mark when pressed check code to see for bugs
-        if(((PINC >> 3) & 0x01)){
+        if(((PINC >> 3) & 0x01) && !on){
             i = 0;
+            on = 1;
             state = Left_One;
         }
         else{
@@ -129,6 +131,7 @@ int TickFtn_left(int state){
         }
         else if(!((PINC >> 3) & 0x01)){
             i = 0;
+            on = 0;
             state = idle_left;
         }
     break;
@@ -143,6 +146,7 @@ int TickFtn_left(int state){
         }
         else if(!((PINC >> 3) & 0x01)){
             i = 0;
+            on = 0;
             state = idle_left;
         }
     break;
@@ -155,6 +159,7 @@ int TickFtn_left(int state){
             state = Left_One;
         }
         else if(!((PINC >> 3) & 0x01)){
+            on = 0;
             state = idle_left;
         }
     break;
@@ -166,6 +171,7 @@ int TickFtn_left(int state){
     switch (state)
     {
     case idle_left:
+    serial_println(on);
         PORTB = SetBit(PORTB,0,0);
         PORTD = SetBit(PORTD,7,0);
         PORTD = SetBit(PORTD,5,0);
@@ -186,6 +192,7 @@ int TickFtn_left(int state){
     break;
 
     case Left_Three:
+    serial_println(on);
         PORTD = SetBit(PORTD,5,1);
         if(i < 1){
             i++;
@@ -204,14 +211,16 @@ int TickFtn_left(int state){
     return state;
 }
 
+
 // // enum left_state{idle_right, Right_One, Right_Two, Right_Three};
 int TickFtn_right(int state){
         switch (state)
     {
     case idle_right:
     // does not require the ! mark when pressed check code to see for bugs
-        if(((PINC >> 4) & 0x01)){
+        if(((PINC >> 4) & 0x01) && !on){
             j = 0;
+            on = 1;
             state = Right_One;
         }
         else{
@@ -230,6 +239,7 @@ int TickFtn_right(int state){
         }
         else if(!((PINC >> 4) & 0x01)){
             j = 0;
+            on = 0;
             state = idle_right;
         }
     break;
@@ -244,6 +254,7 @@ int TickFtn_right(int state){
         }
         else if(!((PINC >> 4) & 0x01)){
             j = 0;
+            on = 0;
             state = idle_right;
         }
     break;
@@ -256,6 +267,7 @@ int TickFtn_right(int state){
             state = Right_One;
         }
         else if(!((PINC >> 4) & 0x01)){
+            on = 0;
             state = idle_right;
         }
     break;
